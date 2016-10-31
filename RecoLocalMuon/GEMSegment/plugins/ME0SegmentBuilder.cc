@@ -11,13 +11,16 @@
 
 ME0SegmentBuilder::ME0SegmentBuilder(const edm::ParameterSet& ps) : geom_(0) {
   
+
   // Algo name
-  std::string algoName = ps.getParameter<std::string>("algo_name");
-  
+  int chosenAlgo = ps.getParameter<int>("algo_type") - 1;
+  // Find appropriate ParameterSets for each algo type                                                                                                                                              
+  std::vector<edm::ParameterSet> algoPSets = ps.getParameter<std::vector<edm::ParameterSet> >("algo_psets");
+
+  edm::ParameterSet segAlgoPSet = algoPSets[chosenAlgo].getParameter<edm::ParameterSet>("algo_pset");
+  std::string algoName = algoPSets[chosenAlgo].getParameter<std::string>("algo_name");
   LogDebug("ME0SegmentBuilder")<< "ME0SegmentBuilder algorithm name: " << algoName;
   
-  // SegAlgo parameter set
-  edm::ParameterSet segAlgoPSet = ps.getParameter<edm::ParameterSet>("algo_pset");
   
   // Ask factory to build this algorithm, giving it appropriate ParameterSet  
   algo = std::unique_ptr<ME0SegmentAlgorithmBase>(ME0SegmentBuilderPluginFactory::get()->create(algoName, segAlgoPSet));
@@ -33,6 +36,7 @@ void ME0SegmentBuilder::build(const ME0RecHitCollection* recHits, ME0SegmentColl
   // Let's define the ensemble of ME0 devices having the same region, chambers number (phi), and eta partition
   // and layer run from 1 to number of layer. This is not the definition of one chamber... and indeed segments
   // could in principle run in different way... The concept of the DetLayer would be more appropriate...
+  // This is not working properly
 
   std::map<uint32_t, std::vector<ME0RecHit*> > ensembleRH;
     
@@ -41,13 +45,23 @@ void ME0SegmentBuilder::build(const ME0RecHitCollection* recHits, ME0SegmentColl
     // ME0 Ensemble is defined by assigning all the ME0DetIds of the same "superchamber" 
     // (i.e. region same, chamber same) to the DetId of the first layer
     // At this point there is only one roll, so nothing to be worried about ...
-    // [At a later stage one will have to mask also the rolls 
-    // if one wants to recover segments that are at the border of a roll]
+    // reference fram is layer 1 and eta partition 1.  this will not work if no eta partition 
+    // are present...
     ME0DetId id(it2->me0Id().region(),1,it2->me0Id().chamber(),it2->me0Id().roll());
     // save current ME0RecHit in vector associated to the reference id
     ensembleRH[id.rawId()].push_back(it2->clone());    
+    // cover the case in which a muon passes through etapartition N for layers 1 .. X 
+    // and through eta partition N-1 for layers X+1 .. 6
+    // therefore check whether Layer > 1 and EtaPart < MAX
+    // and put the rechit also in the ensembleRH for the EtaPart+1
+    if(it2->me0Id().layer()>1 && it2->me0Id().roll()<ME0DetId::maxRollId) {
+      ME0DetId id2(it2->me0Id().region(),1,it2->me0Id().chamber(),it2->me0Id().roll()+1);
+      ensembleRH[id2.rawId()].push_back(it2->clone());
+    }
   }
-  
+
+  std::map<uint32_t, std::vector<ME0Segment> > ensembleSeg;  // collect here all segments from the same chamber
+
   for(auto enIt=ensembleRH.begin(); enIt != ensembleRH.end(); ++enIt) {
     
     std::vector<const ME0RecHit*> me0RecHits;
@@ -61,25 +75,33 @@ void ME0SegmentBuilder::build(const ME0RecHitCollection* recHits, ME0SegmentColl
     }    
     ME0SegmentAlgorithmBase::ME0Ensemble ensemble(std::pair<const ME0EtaPartition*, std::map<uint32_t,const ME0EtaPartition*> >(firstlayer,ens));
     
-    #ifdef EDM_ML_DEBUG
-    LogDebug("ME0SegmentBuilder") << "found " << me0RecHits.size() << " rechits in chamber " /*<< *enIt */;
-    #endif
+    ME0DetId mid(enIt->first);
+#ifdef EDM_ML_DEBUG
+    LogDebug("ME0SegmentBuilder") << "found " << me0RecHits.size() << " rechits in etapart " << mid;
+#endif
     
     // given the chamber select the appropriate algo... and run it
     std::vector<ME0Segment> segv = algo->run(ensemble, me0RecHits);
-    ME0DetId mid(enIt->first);
     
-    ME0DetId midchamber(mid.chamberId());
-
-    #ifdef EDM_ML_DEBUG
-    LogDebug("ME0SegmentBuilder") << "found " << segv.size() << " segments in chamber " << mid;
-    #endif
+#ifdef EDM_ML_DEBUG
+    LogDebug("ME0SegmentBuilder") << "found " << segv.size() << " segments in etapart " << mid;
+#endif
     
     // Add the segments to master collection
-    //FIXME
-    //HACK to make it a chamberID (taken from midchamber, not mid
-    //oc.put(mid, segv.begin(), segv.end());
-    oc.put(midchamber, segv.begin(), segv.end());
+    // oc.put(mid, segv.begin(), segv.end());
+
+    // Add the segments to the chamber segment collection
+    ME0DetId midch = mid.chamberId();
+    ensembleSeg[midch.rawId()].insert(ensembleSeg[midch.rawId()].end(), segv.begin(), segv.end());
+    // Marcello prefers to add segments to the roll id ... Piet prefers to add segments to chamber id
+    // ensembleSeg[mid.rawId()].insert(ensembleSeg[mid.rawId()].end(), segv.begin(), segv.end());
+  }
+
+  for(auto segIt=ensembleSeg.begin(); segIt != ensembleSeg.end(); ++segIt) {
+    // Add the segments to master collection
+    ME0DetId midch(segIt->first);
+    //    ensembleSeg[midch.rawId()].insert(ensembleSeg[midch.rawId()].end(), segv.begin(), segv.end());
+    oc.put(midch, segIt->second.begin(), segIt->second.end());
   }
 }
 
