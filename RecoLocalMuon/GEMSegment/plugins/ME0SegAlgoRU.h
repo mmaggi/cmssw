@@ -146,7 +146,15 @@ private:
     bool debugInfo;
 
     std::unique_ptr<MuonSegFit> sfit_;
-
 };
 
+// functor to sort rechits in the segment
+struct  sortByLayer{
+  sortByLayer(){}
+  bool operator()(const ME0RecHit* a, const ME0RecHit* b) const{
+    int layer1 = a->me0Id().layer();
+    int layer2 = b->me0Id().layer();
+    return  layer1 < layer2;
+  }
+};
 #endif
