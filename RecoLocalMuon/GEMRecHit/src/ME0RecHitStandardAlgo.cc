@@ -33,9 +33,9 @@ bool ME0RecHitStandardAlgo::compute(const ME0DigiPreReco& digi,
 {
   LocalPoint loctemp2(digi.x(),digi.y(),0.);
   Point = loctemp2;
-  float erx = 0.01;
+  float erx = 0.0001;
   if (digi.ex() > erx) erx = digi.ex();
-  float ery = 0.01;
+  float ery = 0.0001;
   if (digi.ey() > ery) ery = digi.ey();
   LocalError loerr2(erx*erx,digi.corr()*erx*ery,ery*ery);
   error = loerr2;
