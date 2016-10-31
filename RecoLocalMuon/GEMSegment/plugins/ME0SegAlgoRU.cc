@@ -68,7 +68,7 @@ std::vector<ME0Segment> ME0SegAlgoRU::buildSegments(const EnsembleHitContainer& 
 
   // MM this should be verified for ME0, noise and PU and high eta are difficult regions...
   //skip events with high multiplicity of hits 
-  if (rechits.size()>150){ 
+  if (rechits.size()>300){ 
     return std::vector<ME0Segment>(); 
   } 
 
@@ -290,6 +290,7 @@ std::vector<ME0Segment> ME0SegAlgoRU::buildSegments(const EnsembleHitContainer& 
 	if(proto_segment.size() > 1)
 	  timeUncrt=timeUncrt/(proto_segment.size()-1);
 	timeUncrt = sqrt(timeUncrt);
+	std::sort(proto_segment.begin(),proto_segment.end(),sortByLayer());
 	ME0Segment temp(proto_segment, sfit_->intercept(),
 			sfit_->localdir(), sfit_->covarianceMatrix(), sfit_->chi2(), averageTime, timeUncrt);
 	sfit_ = 0;
