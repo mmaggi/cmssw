@@ -76,6 +76,10 @@ class TestME0SegmentAnalyzer : public edm::EDAnalyzer {
   std::unique_ptr<TH1F> ME0_segdPhi;
 
   std::unique_ptr<TH1F> ME0_fitchi2;
+  std::unique_ptr<TH1F> ME0_rhmult;
+  std::unique_ptr<TH1F> ME0_rhmultb;
+  std::unique_ptr<TH1F> ME0_sgmult;
+
   std::unique_ptr<TH1F> ME0_Residuals_x;
   std::unique_ptr<TH1F> ME0_Residuals_l1_x;
   std::unique_ptr<TH1F> ME0_Residuals_l2_x;
@@ -126,7 +130,10 @@ TestME0SegmentAnalyzer::TestME0SegmentAnalyzer(const edm::ParameterSet& iConfig)
   ME0_recdPhi = std::unique_ptr<TH1F>(new TH1F("rechitdphi","rechidphi",50,-0.005,0.005)); 
   ME0_segdR   = std::unique_ptr<TH1F>(new TH1F("segmentdR","segmentdR",50,-10.,10.)); 
   ME0_segdPhi = std::unique_ptr<TH1F>(new TH1F("segmentdphi","segmentdphi",50,-0.1,0.1)); 
-  ME0_fitchi2 = std::unique_ptr<TH1F>(new TH1F("chi2Vsndf","chi2Vsndf",50,0.,5.)); 
+  ME0_fitchi2 = std::unique_ptr<TH1F>(new TH1F("chi2Vsndf","chi2Vsndf",50,0.,100.));
+  ME0_rhmult  = std::unique_ptr<TH1F>(new TH1F("rhmulti","rhmulti",11,-0.5,10.5)); 
+  ME0_rhmultb = std::unique_ptr<TH1F>(new TH1F("rhmultib","rhmultib",11,-0.5,10.5)); 
+  ME0_sgmult  = std::unique_ptr<TH1F>(new TH1F("sgmult","sgmult",11,-0.5,10.5));  
   ME0_Residuals_x    = std::unique_ptr<TH1F>(new TH1F("xME0Res","xME0Res",100,-0.5,0.5));
   ME0_Residuals_l1_x = std::unique_ptr<TH1F>(new TH1F("xME0Res_l1","xME0Res_l1",100,-0.5,0.5));
   ME0_Residuals_l2_x = std::unique_ptr<TH1F>(new TH1F("xME0Res_l2","xME0Res_l2",100,-0.5,0.5));
@@ -165,6 +172,9 @@ TestME0SegmentAnalyzer::~TestME0SegmentAnalyzer()
   ME0_segdR->Write();
   ME0_segdPhi->Write();
   ME0_fitchi2->Write();
+  ME0_rhmult->Write();
+  ME0_rhmultb->Write();
+  ME0_sgmult->Write();
   ME0_Residuals_x->Write();
   ME0_Residuals_l1_x->Write();
   ME0_Residuals_l2_x->Write();
@@ -262,6 +272,8 @@ TestME0SegmentAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
   ME0_recdPhi->Fill(fabs(deltaPhi(plmax,plmin)));
   
   std::cout <<"Number of Segments "<<me0Segment->size()<<std::endl;
+  ME0_sgmult->Fill(me0Segment->size());
+  float hmax = 0;
   for (auto me0s = me0Segment->begin(); me0s != me0Segment->end(); me0s++) {
     // The ME0 Ensemble DetId refers to layer = 1   and roll = 1
     ME0DetId id = me0s->me0DetId();
@@ -276,6 +288,8 @@ TestME0SegmentAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
 
     auto me0rhs = me0s->specificRecHits();
     std::cout <<"   ME0 Ensemble Det Id "<<id<<"  Number of RecHits "<<me0rhs.size()<<std::endl;
+    ME0_rhmult->Fill(me0rhs.size());
+    if (me0rhs.size()>hmax) hmax = me0rhs.size();
     //loop on rechits.... take layer local position -> global -> ensemble local position same frame as segment
     for (auto rh = me0rhs.begin(); rh!= me0rhs.end(); rh++){
       auto me0id = rh->me0Id();
@@ -342,6 +356,7 @@ TestME0SegmentAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
     std::cout<<"\n"<<std::endl;
   }
   std::cout<<"\n"<<std::endl;
+  ME0_rhmultb->Fill(hmax);
 }
 
 //define this as a plug-in
