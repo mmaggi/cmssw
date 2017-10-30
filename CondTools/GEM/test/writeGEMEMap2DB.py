@@ -2,8 +2,9 @@ import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 from CondCore.CondDB.CondDB_cfi import *
 
-sourceConnection = "oracle://cms_orcoff_prep/CMS_GEM_APPUSER_R"
-#sourceConnection = 'oracle://cms_omds_lb/CMS_RPC_CONF'
+#sourceConnection = "oracle://cms_orcoff_prep/CMS_GEM_APPUSER_R"
+sourceConnection = 'oracle://cms_omds_lb/CMS_RPC_CONF'
+#sourceConnection = 'oracle://cms_omds_lb/CMS_COND_GENERAL_R'
 
 options = VarParsing.VarParsing()
 options.register( 'runNumber',
@@ -41,6 +42,8 @@ CondDBConnection.DBParameters.messageLevel = cms.untracked.int32( options.messag
 SourceDBConnection = CondDB.clone( connect = cms.string( sourceConnection ) )
 SourceDBConnection.DBParameters.messageLevel = cms.untracked.int32( options.messageLevel )
 
+#SourceDBConnection.DBParameters.authenticationPath = cms.untracked.string('/afs/cern.ch/cms/DB/conddb')
+
 process = cms.Process("Write2DB")
 
 process.MessageLogger = cms.Service( "MessageLogger",
@@ -70,7 +73,10 @@ process.WriteInDB = cms.EDAnalyzer( "GEMEMapDBWriter",
                                     record = cms.string( 'GEMEMapRcd' ),
                                     loggingOn = cms.untracked.bool( False ),
                                     Source = cms.PSet( SourceDBConnection,
-                                                       Validate = cms.untracked.int32( 0 ) ) )
+                                                       OnlineAuthPath = cms.untracked.string('/afs/cern.ch/cms/DB/conddb'),
+                                                       #OnlineAuthPath = cms.untracked.string('/afs/cern.ch/cms/DB/conddb/ADG/.cms_cond/db.key'),
+                                                       Validate = cms.untracked.int32( 0 ), 
+                                                       OnlineConn = cms.untracked.string('oracle://cms_omds_lb/CMS_COND_GENERAL_R') ) )
 
 process.p = cms.Path( process.WriteInDB )
 
