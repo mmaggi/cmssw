@@ -4,7 +4,10 @@ from CondCore.CondDB.CondDB_cfi import *
 
 #sourceConnection = "oracle://cms_orcoff_prep/CMS_GEM_APPUSER_R"
 sourceConnection = 'oracle://cms_omds_lb/CMS_RPC_CONF'
+sourceConnection = 'oracle://cms_omds_adg/CMS_COND_GENERAL_R'
 #sourceConnection = 'oracle://cms_omds_lb/CMS_COND_GENERAL_R'
+
+
 
 options = VarParsing.VarParsing()
 options.register( 'runNumber',
@@ -46,6 +49,7 @@ SourceDBConnection.DBParameters.messageLevel = cms.untracked.int32( options.mess
 
 process = cms.Process("Write2DB")
 
+process.load("CondCore.DBCommon.CondDBCommon_cfi")
 process.MessageLogger = cms.Service( "MessageLogger",
                                      destinations = cms.untracked.vstring( 'cout' ),
                                      cout = cms.untracked.PSet( #default = cms.untracked.PSet( limit = cms.untracked.int32( 0 ) ),
@@ -73,10 +77,11 @@ process.WriteInDB = cms.EDAnalyzer( "GEMEMapDBWriter",
                                     record = cms.string( 'GEMEMapRcd' ),
                                     loggingOn = cms.untracked.bool( False ),
                                     Source = cms.PSet( SourceDBConnection,
-                                                       OnlineAuthPath = cms.untracked.string('/afs/cern.ch/cms/DB/conddb'),
+                                                       OnlineAuthPath = cms.untracked.string('/afs/cern.ch/cms/DB/conddb/'),
                                                        #OnlineAuthPath = cms.untracked.string('/afs/cern.ch/cms/DB/conddb/ADG/.cms_cond/db.key'),
                                                        Validate = cms.untracked.int32( 0 ), 
-                                                       OnlineConn = cms.untracked.string('oracle://cms_omds_lb/CMS_COND_GENERAL_R') ) )
+                                                       OnlineConn = cms.untracked.string('oracle://cms_omds_adg/CMS_COND_GENERAL_R') ) )
+                                                       #OnlineConn = cms.untracked.string('oracle://cms_omds_lb/CMS_GEM_MUON_VIEW') ) )
 
 process.p = cms.Path( process.WriteInDB )
 

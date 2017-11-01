@@ -128,12 +128,15 @@ void GEMRawToDigiModule::produce( edm::Event & e, const edm::EventSetup& iSetup 
 	    GEMDetId gemDetId(dc.gemDetId);
 	    GEMDigi digi(dc.stripId,bc);
 	    
-	    std::cout <<"GEMRawToDigiModule ChipID "<< ec.vfatId
+	    /*std::cout <<"GEMRawToDigiModule ChipID "<< ec.vfatId
 	    	      <<" gemDetId "<< gemDetId
 	    	      <<" chan "<< chan
 	    	      <<" strip "<< dc.stripId
 	    	      <<std::endl;
-	    
+            if (dc.stripId < 0) {
+              std::cout << "wrong channel : " << ec.channelId << " vfat : "<< ec.vfatId << " detId : "<< gemDetId << " det strip : " << dc.stripId  << std::endl;
+              continue; 
+            }	   */ 
 	    outGEMDigis.get()->insertDigi(gemDetId,digi);
 	  }
 	  delete vfatData;

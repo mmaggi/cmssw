@@ -66,6 +66,7 @@ class GEMDQMSource: public DQMEDAnalyzer
     std::unordered_map<UInt_t,  MonitorElement*> VFAT_vs_ClusterSize;
     
     std::unordered_map<UInt_t,  MonitorElement*> StripsFired_vs_eta;
+    std::unordered_map<UInt_t,  MonitorElement*> rh_vs_eta;
 
 };
 
@@ -141,23 +142,29 @@ void GEMDQMSource::bookHistograms(DQMStore::IBooker &ibooker, edm::Run const &, 
   ibooker.setCurrentFolder("GEM/recHit");
   for (auto ch : gemChambers){
     GEMDetId gid = ch.id();
-    string hName = "recHit_Gemini_"+to_string(gid.superChamberId())+"_la_"+to_string(gid.layer());
-    string hTitle = "recHit Gemini ID : "+to_string(gid.superChamberId())+", layer : "+to_string(gid.layer());
+    string hName = "recHit_Gemini_"+to_string(gid.chamber())+"_la_"+to_string(gid.layer());
+    string hTitle = "recHit Gemini chamber : "+to_string(gid.chamber())+", layer : "+to_string(gid.layer());
     recHitME[ ch.id() ] = ibooker.book1D(hName, hTitle, 24,0,24);
 
-    string hName_2 = "VFAT_vs_ClusterSize_Gemini_"+to_string(gid.superChamberId())+"_la_"+to_string(gid.layer());
-    string hTitle_2 = "VFAT vs ClusterSize Gemini ID : "+to_string(gid.superChamberId())+", layer : "+to_string(gid.layer());
-    VFAT_vs_ClusterSize[ ch.id() ] = ibooker.book2D(hName_2, hTitle_2, 11, -0.5, 10.5, 24, 0.5, 24.5);
+    string hName_2 = "VFAT_vs_ClusterSize_Gemini_"+to_string(gid.chamber())+"_la_"+to_string(gid.layer());
+    string hTitle_2 = "VFAT vs ClusterSize Gemini chamber : "+to_string(gid.chamber())+", layer : "+to_string(gid.layer());
+    VFAT_vs_ClusterSize[ ch.id() ] = ibooker.book2D(hName_2, hTitle_2, 11, -0.5, 10.5, 24, -0.5, 23.5);
     TH2F *hist = VFAT_vs_ClusterSize[ ch.id() ]->getTH2F();
     hist->SetMarkerStyle(20);
     hist->SetMarkerSize(0.5);
     
-    string hName_fired = "StripFired_Gemini_"+to_string(gid.superChamberId())+"_la_"+to_string(gid.layer());
-    string hTitle_fired = "StripsFired Gemini ID : "+to_string(gid.superChamberId())+", layer : "+to_string(gid.layer());
+    string hName_fired = "StripFired_Gemini_"+to_string(gid.chamber())+"_la_"+to_string(gid.layer());
+    string hTitle_fired = "StripsFired Gemini chamber : "+to_string(gid.chamber())+", layer : "+to_string(gid.layer());
     StripsFired_vs_eta[ ch.id() ] = ibooker.book2D(hName_fired, hTitle_fired, 384, 0.5, 384.5, 8, 0.5,8.5);
     TH2F *hist_2 = StripsFired_vs_eta[ ch.id() ]->getTH2F();
     hist_2->SetMarkerStyle(20);
     hist_2->SetMarkerSize(0.5);
+
+    string hName_rh = "recHit_x_Gemini_"+to_string(gid.chamber())+"_la_"+to_string(gid.layer());
+    string hTitle_rh = "recHit local x Gemini chamber : "+to_string(gid.chamber())+", layer : "+to_string(gid.layer());
+    rh_vs_eta[ ch.id() ] = ibooker.book2D(hName_rh, hTitle_rh, 500, -25, 25, 8, 0.5,8.5);
+
+
   }
   
 }
@@ -191,7 +198,7 @@ void GEMDQMSource::analyze(edm::Event const& event, edm::EventSetup const& event
     // Sometimes this value is null
     if ( GEMGeometry_->idToDet((*recHit).gemId()) == NULL ) continue;
     
-    std::cout << "DetId : " << (*recHit).gemId() << std::endl;
+    //std::cout << "DetId : " << (*recHit).gemId() << std::endl;
     
     GEMDetId id((*recHit).geographicalId());
     LocalPoint recHitLP = recHit->localPosition();
@@ -210,6 +217,7 @@ void GEMDQMSource::analyze(edm::Event const& event, edm::EventSetup const& event
       for ( auto hit = gemRecHit; hit != recHitsRange.second; ++hit ) {
         int nVfat = findVFAT(1.0, 385.0, hit->firstClusterStrip()+0.5*hit->clusterSize(), rId.roll());
         recHitME[ cId ]->Fill(nVfat);
+        rh_vs_eta[ cId ]->Fill(hit->localPosition().x(), rId.roll());
         VFAT_vs_ClusterSize[ cId ]->Fill(hit->clusterSize(), nVfat);
         for(int i = hit->firstClusterStrip(); i < (hit->firstClusterStrip() + hit->clusterSize()); i++){
         	StripsFired_vs_eta[ cId ]->Fill(i, rId.roll());
