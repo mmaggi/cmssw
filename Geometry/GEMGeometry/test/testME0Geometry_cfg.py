@@ -3,8 +3,8 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process("Demo")
 # process.load("Configuration.Geometry.GeometryExtended2023D1_cff")      # ME0 Geometry with 1 etapartition
 # process.load("Configuration.Geometry.GeometryExtended2023D1Reco_cff")  # ME0 Geometry with 1 etapartition
-process.load("Configuration.Geometry.GeometryExtended2023D6_cff")        # ME0 Geometry with 10 etapartitions
-process.load("Configuration.Geometry.GeometryExtended2023D6Reco_cff")    # ME0 Geometry with 10 etapartitions
+process.load("Configuration.Geometry.GeometryExtended2023D20_cff")        # ME0 Geometry with 10 etapartitions  #was D6
+process.load("Configuration.Geometry.GeometryExtended2023D20Reco_cff")    # ME0 Geometry with 10 etapartitions  #was D6
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 ### TO ACTIVATE LogTrace NEED TO COMPILE IT WITH:
