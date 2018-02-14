@@ -12,10 +12,10 @@
 
 ME0PadDigiProducer::ME0PadDigiProducer(const edm::ParameterSet& ps)
 : geometry_(nullptr)
-{
+{ std::cout << "pippo sul creatore" << std::endl;
   digis_ = ps.getParameter<edm::InputTag>("InputCollection");
 
-  digi_token_ = consumes<ME0DigiCollection>(digis_);
+   std::cout << "pippo sul creatore" << std::endl;digi_token_ = consumes<ME0DigiCollection>(digis_);
 
   produces<ME0PadDigiCollection>();
 }
@@ -62,6 +62,7 @@ void ME0PadDigiProducer::buildPads(const ME0DigiCollection &det_digis, ME0PadDig
     for (auto d = digis.first; d != digis.second; ++d)
     {
       int pad_num = 1 + static_cast<int>( p->padOfStrip(d->strip()) );
+      std::cout << "pippo: -> pad = " << pad_num << "\tstrip = " << d->strip() << std::endl;
       proto_pads.emplace(pad_num, d->bx());
     }
 
